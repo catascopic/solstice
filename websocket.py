@@ -8,44 +8,80 @@ from threading import Lock
 
 lock = Lock()
 connections = {}
-
 messages = []
 
-name_pattern = re.compile('/([A-Z]{3})')
+NAME_PATTERN = re.compile('/([A-Z]{3})')
 
-async def connect(websocket, path):
-	match = name_pattern.fullmatch(path)
+async def connect(socket, path):
+	match = NAME_PATTERN.fullmatch(path)
 	if match == None:
-		await websocket.close(1002, 'invalid')
+		await socket.close(1002, 'invalid')
 		return
 
 	name = match.group(1)
 
 	with lock:
 		if name in connections:
-			await websocket.close(1002, 'duplicate')
+			await socket.close(1002, 'duplicate')
 			return
-		connections[name] = websocket
+		connections[name] = socket
 		
 	print(f'{name} connected, {len(connections)} total')
+	await handle(socket, name)
+	del connections[name]
+	print(f'{name} disconnected, {len(connections)} total')
 
+
+async def handle(socket, name):
+	buffer = MessageBuffer(name)
+	messages.append(buffer)
 	try:
-		async for message in websocket:
+		async for message in socket:
+			if message == 'delete':
+				buffer.delete()
+			elif message == 'newline':
+				buffer = MessageBuffer(name)
+				messages.append(buffer)
+			else:
+				buffer.add(message)
+				
+			print(messages)
 			await broadcast(name, message)
 	except ConnectionClosedError:
 		# this is raised if the socket closes without an error code
 		# in this case, I don't think we should care
 		pass
 
-	del connections[name]
-	print(f'{name} disconnected, {len(connections)} total')
 
+async def broadcast(name, signal):
+	message = json.dumps({'name': name, 'signal': signal})
+	for name, socket in connections.items():
+		if name != name:
+			await socket.send(message)
+			
 
-async def broadcast(source, signal):
-	message = json.dumps({'name': source, 'signal': signal})
-	for name, websocket in connections.items():
-		if name != source:
-			await websocket.send(message)
+class MessageBuffer:
+
+	def __init__(self, name):
+		self.name = name;
+		self.buffer = []
+	
+	
+	def add(self, letter):
+		self.buffer.append(letter)
+	
+	
+	def delete(self):
+		self.buffer.pop()
+		
+
+	def toJson(self):
+		json.dumps({'name': self.name, 'text': ''.join(self.buffer)})
+		
+	
+	def __repr__(self):
+		return f'{self.name}: {"".join(self.buffer)}'
+
 
 start_server = websockets.serve(connect, port=3637)
 
