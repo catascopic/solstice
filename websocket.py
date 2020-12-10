@@ -8,14 +8,9 @@ from enum import Enum
 from threading import RLock
 from websockets.exceptions import ConnectionClosedError
 
-connection_lock = RLock()
-message_lock = RLock()
-goal_lock = RLock()
-
 clients = {}
 messages = []
-
-goals_left = 32
+goals_left = 1
 
 NAME_PATTERN = re.compile('/([A-Z]{3})')
 
@@ -28,21 +23,20 @@ async def connect(socket, path):
 
 	name = match.group(1)
 
-	with connection_lock:
-		client = clients.get(name)
-		if client:
-			if client.online():
-				await socket.close(1002, 'duplicate')
-				return
-			# should this be a method, or am I thinking in Java?
-			client.socket = socket
-			print(f'{name} reconnected')
-		else:
-			client = Client(socket, name)
-			clients[name] = client
-			print(f'{name} connected, {len(clients)} total')
-			
-		await check_unpaired()
+	client = clients.get(name)
+	if client:
+		if client.online():
+			await socket.close(1002, 'duplicate')
+			return
+		# should this be a method, or am I thinking in Java?
+		client.socket = socket
+		print(f'{name} reconnected')
+	else:
+		client = Client(socket, name)
+		clients[name] = client
+		print(f'{name} connected, {len(clients)} total')
+		
+	await check_unpaired()
 
 	await client.handle()
 	print(f'{name} disconnected')
@@ -50,8 +44,7 @@ async def connect(socket, path):
 
 def new_chat(name):
 	chat = ChatItem(name)
-	with message_lock:
-		messages.append(chat)
+	messages.append(chat)
 	return chat
 
 
@@ -62,9 +55,7 @@ async def check_unpaired():
 
 
 def get_backlog():
-	with message_lock:
-		# do something
-		pass
+	pass
 
 
 def choose_fair(chooser):
@@ -159,10 +150,9 @@ class Client:
 
 
 	async def broadcast(self, message):
-		with connection_lock:
-			for client in clients.values():
-				if client != self:
-					await client.safe_send(message)
+		for client in clients.values():
+			if client != self:
+				await client.safe_send(message)
 
 
 	async def check_response(self, response):
@@ -170,26 +160,22 @@ class Client:
 		if response == self.response:
 			self.contact.depending_clients.remove(self)
 			self.next_prompt()
-			with goal_lock:
-				goals_left -= 1
-				goals_temp = goals_left
+			goals_left -= 1
 			await self.safe_send({
 				'prompt': self.prompt, 
 				'feedback': True, 
-				'goal': goals_temp})
-			await self.broadcast({'goal': goals_temp})
+				'goal': goals_left})
+			await self.broadcast({'goal': goals_left})
 		else:
 			await self.safe_send({'feedback': False})
 		
 
 	def next_prompt(self):
-		with connection_lock:
-			self.contact = choose_fair(self)
+		self.contact = choose_fair(self)
 		if self.contact == None:
 			self.prompt = None
 			self.response = None
 		else:
-			# should this part be synchronized?
 			self.contact.depending_clients.add(self)
 			self.prompt, self.response = self.contact.prompts_left.pop()
 			
