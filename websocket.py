@@ -31,7 +31,7 @@ async def connect(socket, path):
 	with connection_lock:
 		client = clients.get(name)
 		if client:
-			if not client.socket.closed:
+			if client.online():
 				await socket.close(1002, 'duplicate')
 				return
 			# should this be a method, or am I thinking in Java?
@@ -42,7 +42,7 @@ async def connect(socket, path):
 			clients[name] = client
 			print(f'{name} connected, {len(clients)} total')
 			
-		check_unpaired()
+		await check_unpaired()
 
 	await client.handle()
 	print(f'{name} disconnected')
@@ -55,7 +55,7 @@ def new_chat(name):
 	return chat
 
 
-def check_unpaired():
+async def check_unpaired():
 	for client in clients.values():
 		if not client.prompt:
 			await client.send_next_prompt()
@@ -69,7 +69,7 @@ def get_backlog():
 
 def choose_fair(chooser):
 	active_clients = [client for client in clients.values()
-		if client != chooser and not client.socket.closed]
+		if client != chooser and client.online()]
 	total = len(active_clients)
 	if total == 0:
 		return None
@@ -145,13 +145,17 @@ class Client:
 		
 	
 	async def safe_send(self, message):
-		if not self.socket.closed:
+		if self.online():
 			try:
 				await self.socket.send(json.dumps(message))
 				return True
 			except ConnectionClosedError:
 				pass
 		return False
+		
+	
+	def online(self):
+		return not self.socket.closed
 
 
 	async def broadcast(self, message):
@@ -210,7 +214,7 @@ class Client:
 		
 			
 	def __repr__(self):
-		return f'{self.name}: {"off" if self.socket.closed else "on"}line {self.socket}'
+		return f'{self.name}: {"on" if self.online() else "off"}line {self.socket}'
 
 
 class ChatItem:
@@ -218,12 +222,8 @@ class ChatItem:
 	def __init__(self, name):
 		self.name = name
 		self.content = ''
-		
 
-	def to_json(self):
-		return {'name': self.name, 'text': ''.join(self.content)}
-		
-	
+
 	def __repr__(self):
 		return f'{self.name}: {"".join(self.content)}'
 
