@@ -42,29 +42,36 @@ async def connect(socket, path):
 			clients[name] = client
 			print(f'{name} connected, {len(clients)} total')
 			
-	# TODO: check all clients for missing prompts (there should only ever be one!)
-	
+		check_unpaired()
+
 	await client.handle()
 	print(f'{name} disconnected')
 
 
 def new_chat(name):
-	buffer = ChatItem(name)
+	chat = ChatItem(name)
 	with message_lock:
-		messages.append(buffer)
-	return buffer
-			
+		messages.append(chat)
+	return chat
+
+
+def check_unpaired():
+	for client in clients.values():
+		if not client.prompt:
+			await client.send_next_prompt()
+
 
 def get_backlog():
 	with message_lock:
-		return json.dumps([m.to_json() for m in messages])
+		# do something
+		pass
 
 
 def choose_fair(chooser):
 	active_clients = [client for client in clients.values()
-			if client != chooser and not client.socket.closed]
+		if client != chooser and not client.socket.closed]
 	total = len(active_clients)
-	if not total:
+	if total == 0:
 		return None
 	best = active_clients[0]
 	best_fairness = best.get_fairness()
@@ -82,12 +89,13 @@ def choose_fair(chooser):
 class Client:
 	
 	def __init__(self, socket, name):
-		# called while holding the connection lock
 		self.name = name
 		self.socket = socket
+		self.chat = new_chat(self.name)
 		with open(f'codebooks/{len(clients)}.json') as file:
-			self.codebook = list(json.load(file).items())
-		random.shuffle(self.codebook)
+			self.codebook = json.load(file)
+		self.prompts_left = self.codebook.copy()
+		random.shuffle(self.prompts_left)
 
 		self.depending_clients = set()
 		
@@ -96,13 +104,22 @@ class Client:
 		self.rate = 0
 		
 		self.next_prompt()
-		print(self.prompt)
+		
+
+	def switch_socket(self, socket):
+		self.socket = socket
 
 
 	async def handle(self):
+		# self.socket = socket
 		# TODO: don't send this if there is no prompt
-		await self.safe_send({'prompt': self.prompt})
-		chat = new_chat(self.name)
+		# TODO: send current chat
+		await self.safe_send({
+			'codebook': self.codebook,
+			'goal': goals_left,
+			'prompt': self.prompt
+		})
+
 		try:
 			async for message in self.socket:
 				obj = json.loads(message)
@@ -111,16 +128,15 @@ class Client:
 					await self.check_response(response)
 					continue
 
-				if obj.get('delete'):
-					chat.pop()
-				elif obj.get('newline'):
-					chat = new_chat(self.name)
-				else:
-					chat.push(obj['letter'])
-
-				await self.broadcast({
-					'name': self.name,
-					'message': obj})
+				# TODO: naming!
+				content = obj.get('chat')
+				if content:
+					if obj.get('newline'):
+						self.chat = new_chat(self.name)
+					self.chat.content = content
+					await self.broadcast({'chat': {
+						'name': self.name,
+						'content': content}})
 		except ConnectionClosedError:
 			# this is raised if the socket closes without an error code
 			# in this case, I don't think we should care
@@ -137,11 +153,11 @@ class Client:
 				pass
 		return False
 
-		
+
 	async def broadcast(self, message):
 		with connection_lock:
 			for client in clients.values():
-				if client != self and not client.socket.closed:
+				if client != self:
 					await client.safe_send(message)
 
 
@@ -155,12 +171,12 @@ class Client:
 				goals_temp = goals_left
 			await self.safe_send({
 				'prompt': self.prompt, 
-				'correct': True, 
-				'goals': goals_temp})
-			await self.broadcast({'goals': goals_temp})
+				'feedback': True, 
+				'goal': goals_temp})
+			await self.broadcast({'goal': goals_temp})
 		else:
-			await self.safe_send({'correct': False})
-				
+			await self.safe_send({'feedback': False})
+		
 
 	def next_prompt(self):
 		with connection_lock:
@@ -171,47 +187,45 @@ class Client:
 		else:
 			# should this part be synchronized?
 			self.contact.depending_clients.add(self)
-			self.prompt, self.response = self.contact.codebook.pop()
+			self.prompt, self.response = self.contact.prompts_left.pop()
+			
+	
+	async def send_next_prompt(self):
+		self.next_prompt()
+		if self.prompt:
+			await self.safe_send({'prompt': self.prompt})
 			
 			
 	def update(self, choices):
 		# updates the rolling average
 		self.rate = (self.chances * self.rate + 1 / choices) / (self.chances + 1)
 		self.chances += 1
-	
+
 
 	def get_fairness(self):
 		if self.chances == 0:
 			return -1
-		expected = self.rate * self.chances;
-		return (self.chosen - expected) / expected;
+		expected = self.rate * self.chances
+		return (self.chosen - expected) / expected
 		
 			
 	def __repr__(self):
-		return f'{self.name}: {"off" if self.socket.closed else "on"}line'
+		return f'{self.name}: {"off" if self.socket.closed else "on"}line {self.socket}'
 
 
 class ChatItem:
 
 	def __init__(self, name):
 		self.name = name
-		self.buffer = []
-	
-	
-	def push(self, letter):
-		self.buffer.append(letter)
-	
-	
-	def pop(self):
-		self.buffer.pop()
+		self.content = ''
 		
 
 	def to_json(self):
-		return {'name': self.name, 'text': ''.join(self.buffer)}
+		return {'name': self.name, 'text': ''.join(self.content)}
 		
 	
 	def __repr__(self):
-		return f'{self.name}: {"".join(self.buffer)}'
+		return f'{self.name}: {"".join(self.content)}'
 
 
 start_server = websockets.serve(connect, port=3637)
