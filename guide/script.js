@@ -1,0 +1,3 @@
+function enter() {
+	document.location = ''; // ?
+}

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<meta charset="UTF-8">
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="style.css">
+<script src="script.js"></script>
+<title>2020 East Coast Solstice: Guide</title>
+</head>
+<body>
+
+<h1>2020 East Coast Solstice: Your Guide to Entry</h1>
+
+<p>You’re trapped in the year 1912.  A pandemic rages across America.  Your only escape is to reach the time machine and travel to 2020, where the world is gripped by a different pandemic, but at least we have Zoom.
+
+<p>But before you can get to the time machine, you have to coordinate with your fellow time travelers.  Fortunately, you know Morse code.
+
+<p>What’s that, you don’t?
+
+<p>That’s okay, I’m sure you’ll pick it up quickly.
+
+<p>You’ve also been assigned a secret, unique codebook.  The other time travelers also have one, but each one is different.  These codebooks use a call-and-response format: if someone invokes one of the calls from your codebook, you must answer with the proper response to prove your identity.<p>
+
+<p>Your codebook will look something like this (though it will have 32 total entries):<p>
+
+<div class="code">
+	<div>breakfast: nuclear</div>
+	<div>party: ancient</div>
+	<div>tomorrow: impossible</div>
+</div>
+
+<p>For example, if anyone signals <span class="code">BREAKFAST</span> in Morse code, you must respond with <span class="code">NUCLEAR</span>.  You also must identify who you’re addressing; everyone has their own three-letter callsign. A sample chat might look like this:
+
+<div class="code">
+	<div>[ABC] BREAKFAST</div>
+	<div>[XYZ] OCEAN</div>
+</div>
+
+<p>So if you were <span class="code">QRS</span>, you would respond like this:
+
+<div class="code">
+	[QRS] ABC NUCLEAR
+</div>
+
+<p>And that lets <span class="code">ABC</span> know that the response to <span class="code">BREAKFAST</span> is <span class="code">NUCLEAR</span>, which gets us all one step closer to returning to the present day.  Notice that <span class="code">XYZ</span> needs the response to <span class="code">OCEAN</span>.  That word doesn’t appear in your codebook, though, meaning it was meant for someone else and you don’t need to worry about it.  But you’ll have to check your codebook whenever anyone sends a prompt, to see if you’re responsible for the answer!
+
+<p><i>Meanwhile</i>, you have a sequence of prompts that you need to get the response for, but of course, these prompts are for the other travelers, who will need to consult their codebooks.  You’ll need to transmit them your prompt in Morse code, and wait for someone to give you the correct response.  In the above example, if you were <span class="code">ABC</span>, you’d be waiting for <span class="code">QRS</span> to give you the proper response to <span class="code">BREAKFAST</span>.  Once you had it, you’d type it into the text field and press enter.
+
+<p>(Text field?  Press Enter?  It’s 1912, what are you talking about?)
+
+<p>(Oh, uh, I mean write it down on your parchment with your quill or whatever.  Work with me!)
+
+<p>Once <i>the team as a whole</i> has completed enough call-and-response exchanges, indicated by the lock icons, the video chat, uh, I mean the time machine, will become available.
+
+<p>If you get totally stuck, you can call the emergency time traveler hotline: 443-545-6177.
+
+<h2>But wait, we’re doing all of this in <i>Morse code?</i></h2>
+
+<p>Prettty much, yeah.  Remember, communicating in Morse code builds character!  You’ll be sending messages by tapping <kbd>Space</kbd>.  So to send an S, three quick taps on your spacebar; for O, three longer taps.  Fortunately, you’re a good enough telegraph operator that you can read Morse code naturally, so any messages you receive will appear in plain English.
+
+<p><i>Real</i> telegraphers use pauses of varying lengths to signal the boundaries between letters, words, and sentences. But as fake telegraphers, we can use <kbd>Shift</kbd>+<kbd>Space</kbd> for a space, and <kbd>Enter</kbd> to end the current line.
+
+<p>And finally (now I’m being way too nice) you can delete your last character with <kbd>Backspace</kbd>.  But only your last letter!  Once you start your next letter, you’ll be unable to delete your previous one.
+
+<h2>Your Callsign</h2>
+
+<p>Before you begin, you’ll have to pick a callsign.  It must be exactly 3 letters, so it could be your initials or anything else that’s meaningful to you.
+
+<div>
+<input maxlength="3" size="3" placeholder="ABC" id="callsign">
+<span class="enter" onclick="enter()">Enter</span>
+</div>
+
+<div style="height: 200px;"><!-- spacer --></div>
+
+</body>
+</html>

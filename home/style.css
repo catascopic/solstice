@@ -1,0 +1,11 @@
+html {
+	background-color: black;
+	color: white;
+	font: 14px sans-serif;
+	display: flex;
+	justify-content: center;
+}
+
+body {
+	max-width: 640px;
+}

@@ -1,0 +1,65 @@
+:root {
+	--amber: #FFB000;
+	--green: #22BB00;
+	--background: #282828;
+}
+
+html {
+	background-color: black;
+	color: white;
+	font: 14px sans-serif;
+	display: flex;
+	justify-content: center;
+}
+
+body {
+	max-width: 640px;
+}
+
+.code {
+	font: 12px monospace;
+	color: var(--amber);	
+}
+
+span.code {
+	
+}
+
+div.code {
+	display: inline-block;
+	padding: 8px;
+	background-color: var(--background);
+}
+
+input {
+	font-family: monospace;
+	font-size: 24px;
+	text-transform: uppercase;
+	border: 2px solid white;
+	padding: 2px;
+	background-color: black;
+	color: var(--amber);
+}
+
+input:focus {
+    outline: none;
+	border-color: var(--amber);
+}
+
+.enter {
+	font-size: 16px;
+	border: 2px solid white;
+	border-radius: 2px;
+}
+
+kbd {
+    border: 1px outset lightSlateGray;
+    border-radius: 3px;
+	color: lightSlateGray;
+    display: inline-block;
+    font-size: .85em;
+    font-weight: bold;
+    line-height: 1;
+    padding: 2px 4px;
+    white-space: nowrap;
+}
