@@ -16,7 +16,7 @@ NAME_PATTERN = re.compile('/([A-Z]{3})')
 async def connect(socket, path):
 	match = NAME_PATTERN.fullmatch(path)
 	if match == None:
-		await socket.close(1002, 'invalid')
+		await socket.close(4000, 'invalid')
 		return
 
 	name = match.group(1)
@@ -24,7 +24,7 @@ async def connect(socket, path):
 	client = clients.get(name)
 	if client:
 		if client.online():
-			await socket.close(1002, 'duplicate')
+			await socket.close(4001, 'duplicate')
 			return
 		client.socket = socket
 		print(f'{name} reconnected')
@@ -39,7 +39,7 @@ async def connect(socket, path):
 	
 	
 def online_clients():
-	return client for client in clients.values() if client.online()
+	return (client for client in clients.values() if client.online())
 
 
 def new_chat(name):
@@ -77,6 +77,11 @@ def choose_fair(chooser):
 	return best
 
 
+def print_pairings():
+	for client in clients.values():
+		print(f'{client} has a prompt for {client.contact}')
+
+
 class Client:
 
 	def __init__(self, socket, name):
@@ -100,7 +105,7 @@ class Client:
 
 	async def handle(self):
 		if self.cleanup_task:
-			self.cleanup_task.cancel()
+			result = self.cleanup_task.cancel()
 
 		await self.send_state()
 
@@ -162,13 +167,14 @@ class Client:
 	async def check_response(self, given_response):
 		global goals_left
 		if given_response == self.response:
-			await contact.safe_send({'teamwork': self.name})
+			await self.contact.safe_send({'teamwork': self.name})
 			self.next_prompt()
 			goals_left -= 1
 			await self.safe_send({
 				'prompt': self.prompt, 
 				'feedback': True, 
 				'goal': goals_left})
+			# ideally combine this with the "teamwork" message, but whatever
 			await self.broadcast({'goal': goals_left})
 		else:
 			await self.safe_send({'feedback': False})
@@ -185,6 +191,7 @@ class Client:
 	
 	async def send_next_prompt(self):
 		self.next_prompt()
+		# send null prompt if no users are online?
 		if self.prompt:
 			await self.safe_send({'prompt': self.prompt})
 
@@ -195,7 +202,7 @@ class Client:
 		for client in clients.values():
 			if client.contact == self:
 				await client.send_next_prompt()
-		
+
 
 	def update(self, choices):
 		# updates the rolling average
@@ -211,7 +218,7 @@ class Client:
 		
 			
 	def __repr__(self):
-		return f'{self.name}: {"on" if self.online() else "off"}line {self.socket}'
+		return f'{self.name}, {"on" if self.online() else "off"}line'
 
 
 class ChatItem:
