@@ -1,11 +1,27 @@
+:root {
+	--amber: #FFB000;
+}
+
 html {
-	background-color: black;
-	color: white;
-	font: 14px sans-serif;
 	display: flex;
 	justify-content: center;
 }
 
 body {
 	max-width: 640px;
+	background-color: black;
+	color: white;
+	font: 14px sans-serif;
+}
+
+.center {
+	display: flex;
+	justify-content: center;
+}
+
+a {
+	border: 2px solid var(--amber);
+	padding: 4px;
+	color: var(--amber);
+	text-decoration: none;
 }

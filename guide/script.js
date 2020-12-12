@@ -1,18 +1,17 @@
 const PATTERN = /[A-Z]{3}/;
 
-
 function admit(value) {
 	let name = value.toUpperCase();
 	if (PATTERN.test(name)) {
 		localStorage.setItem('name', name);
-		document.getElementById('link').href = '/morse?name=' + name;
-		fetch('/checkname/' + name).then(function(response) {
+		document.getElementById('link').href = '/morse/?name=' + name;
+		fetch('/checkname/?name=' + name).then(function(response) {
 			switch (response.status) {
 				case 200:
 				case 403:
 					show('ready', response.status == 200);
 					show('taken', response.status == 403);
-					show('join', true);
+					show('connect', true);
 					break;
 				default:
 					show('error', true);

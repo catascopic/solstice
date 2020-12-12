@@ -8,7 +8,7 @@ from websockets.exceptions import ConnectionClosedError
 
 clients = {}
 messages = []
-goals_left = 1
+goals_left = 5
 
 NAME_PATTERN = re.compile('/([A-Z]{3})')
 
@@ -98,7 +98,7 @@ class Client:
 	def __init__(self, socket, name):
 		self.name = name
 		self.socket = socket
-		self.chat = new_chat(self.name)
+		self.chat = None
 		with open(f'codebooks/{len(clients)}.json') as file:
 			self.codebook = json.load(file)
 		self.prompts_left = self.codebook.copy()
@@ -138,7 +138,7 @@ class Client:
 						'name': self.name,
 						'content': content
 					}
-					if data.get('newline'):
+					if data.get('newline') or self.chat is None:
 						self.chat = new_chat(self.name)
 						to_broadcast['newline'] = True
 					self.chat.content = content
@@ -151,12 +151,17 @@ class Client:
 		
 
 	async def send_state(self):
+		if self.chat is None:
+			myChat = ''
+		else:
+			myChat = self.chat.content
+	
 		await self.safe_send({
 			'codebook': self.codebook,
 			'goal': goals_left,
 			'prompt': self.prompt,
 			'backlog': chat_history(),
-			'myChat': self.chat.content,
+			'myChat': myChat
 		})
 
 
