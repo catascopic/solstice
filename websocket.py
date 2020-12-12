@@ -8,7 +8,7 @@ from websockets.exceptions import ConnectionClosedError
 
 clients = {}
 messages = []
-goals_left = 35
+goals_left = 1
 
 NAME_PATTERN = re.compile('/([A-Z]{3})')
 
@@ -56,6 +56,17 @@ async def check_unpaired():
 
 def chat_history():
 	return [chat.__dict__ for chat in messages if chat.content]
+	
+	
+async def victory():
+	info = video_call_info();
+	for client in clients.values():
+		await client.safe_send({'victory': info})
+
+
+def video_call_info():
+	with open(f'video-call.json') as file:
+		return json.load(file)
 
 
 def choose_fair(chooser):
@@ -107,7 +118,10 @@ class Client:
 		if self.cleanup_task:
 			result = self.cleanup_task.cancel()
 
-		await self.send_state()
+		if goals_left > 0:
+			await self.send_state()
+		else:
+			await self.send_victory_state()
 
 		try:
 			async for message in self.socket:
@@ -120,12 +134,15 @@ class Client:
 				# TODO: naming!
 				content = data.get('chat')
 				if content:
+					to_broadcast = {
+						'name': self.name,
+						'content': content
+					}
 					if data.get('newline'):
 						self.chat = new_chat(self.name)
+						to_broadcast['newline'] = True
 					self.chat.content = content
-					await self.broadcast({'chat': {
-						'name': self.name,
-						'content': content}})
+					await self.broadcast({'chat': to_broadcast})
 		except ConnectionClosedError:
 			# this is raised if the socket closes without an error code
 			# in this case, I don't think we should care
@@ -140,6 +157,13 @@ class Client:
 			'prompt': self.prompt,
 			'backlog': chat_history(),
 			'myChat': self.chat.content,
+		})
+
+
+	async def send_victory_state(self):
+		await self.safe_send({
+			'victory': video_call_info(),
+			'backlog': chat_history()
 		})
 		
 	
@@ -170,12 +194,16 @@ class Client:
 			await self.contact.safe_send({'teamwork': self.name})
 			self.next_prompt()
 			goals_left -= 1
-			await self.safe_send({
-				'prompt': self.prompt, 
-				'feedback': True, 
-				'goal': goals_left})
-			# ideally combine this with the "teamwork" message, but whatever
-			await self.broadcast({'goal': goals_left})
+			
+			if goals_left <= 0:
+				await victory()
+			else:
+				await self.safe_send({
+					'prompt': self.prompt, 
+					'feedback': True, 
+					'goal': goals_left})
+				# ideally combine this with the "teamwork" message, but whatever
+				await self.broadcast({'goal': goals_left})
 		else:
 			await self.safe_send({'feedback': False})
 		

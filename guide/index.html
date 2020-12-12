@@ -4,11 +4,11 @@
 <head>
 <link rel="stylesheet" type="text/css" href="style.css">
 <script src="script.js"></script>
-<title>2020 East Coast Solstice: Guide</title>
+<title>2020 Maryland Solstice: Guide</title>
 </head>
 <body>
 
-<h1>2020 East Coast Solstice: Your Guide to Entry</h1>
+<h1>2020 Maryland Solstice: Your Guide to Entry</h1>
 
 <p>You’re trapped in the year 1912.  A pandemic rages across America.  Your only escape is to reach the time machine and travel to 2020, where the world is gripped by a different pandemic, but at least we have Zoom.
 
@@ -57,18 +57,31 @@
 
 <p>Prettty much, yeah.  Remember, communicating in Morse code builds character!  You’ll be sending messages by tapping <kbd>Space</kbd>.  So to send an S, three quick taps on your spacebar; for O, three longer taps.  Fortunately, you’re a good enough telegraph operator that you can read Morse code naturally, so any messages you receive will appear in plain English.
 
+<p>Also, there will be a built-in Morse code chart, in case you forgot a letter.  You can press <kbd>Tab</kbd> to view the chart, as well as your codebook.
+
 <p><i>Real</i> telegraphers use pauses of varying lengths to signal the boundaries between letters, words, and sentences. But as fake telegraphers, we can use <kbd>Shift</kbd>+<kbd>Space</kbd> for a space, and <kbd>Enter</kbd> to end the current line.
 
 <p>And finally (now I’m being way too nice) you can delete your last character with <kbd>Backspace</kbd>.  But only your last letter!  Once you start your next letter, you’ll be unable to delete your previous one.
 
 <h2>Your Callsign</h2>
 
-<p>Before you begin, you’ll have to pick a callsign.  It must be exactly 3 letters, so it could be your initials or anything else that’s meaningful to you.
+<p>Before you begin, you’ll have to pick a callsign.  It must be exactly 3 letters, so it could be your initials, or your first name (if you’re lucky), or anything else that’s meaningful to you.
 
-<div>
-<input maxlength="3" size="3" placeholder="ABC" id="callsign">
-<span class="enter" onclick="enter()">Enter</span>
+<div class="entry">
+<input maxlength="3" placeholder="ABC" oninput="admit(this.value)" id="callsign">
 </div>
+
+<div id="ready" class="hidden">
+<h2>OK, you're ready to go!</h2>
+</div>
+<div id="taken" class="hidden">
+<h2>Someone has already joined with that name!</h2>
+<p>If it was you, that’s fine.  You can still join, but only if the previous client is no longer connected.
+</div>
+<div id="error" class="hidden">
+<h2>Something went wrong! Now is a good time to panic.</h2>
+</div>
+<div class="join hidden" id="join"><a href="" id="link" target="_blank" rel="noopener noreferrer">JOIN THE GAME</div></div>
 
 <div style="height: 200px;"><!-- spacer --></div>
 
