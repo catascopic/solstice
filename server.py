@@ -2,9 +2,6 @@ import flask
 import os
 from flask import Flask
 from flask import request
-from threading import RLock
-
-lock = RLock()
 
 names_in_use = set()
 
@@ -26,7 +23,7 @@ def morse():
 @app.route('/checkname/')
 def check_name():
 	name = request.args.get('name')
-	if name is None:
+	if not name:
 		return '', 400
 	if name in names_in_use:
 		return '', 403

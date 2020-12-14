@@ -8,7 +8,7 @@ from websockets.exceptions import ConnectionClosedError
 
 clients = {}
 messages = []
-goals_left = 5
+goals_left = 20
 
 NAME_PATTERN = re.compile('/([A-Z]{3})')
 
@@ -125,6 +125,7 @@ class Client:
 
 		try:
 			async for message in self.socket:
+				print(f'{self.name}: {message}')
 				data = json.loads(message)
 				response = data.get('response')
 				if response:

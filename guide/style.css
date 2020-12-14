@@ -30,7 +30,7 @@ body {
 .callsign {
 	display: inline-block;
 	border: 1px solid var(--amber);
-	padding: 1px;
+	padding: 0 1px;
 }
 
 div.code {
