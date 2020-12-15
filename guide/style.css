@@ -27,7 +27,7 @@ body {
 	color: var(--amber);	
 }
 
-.callsign {
+.chat-name {
 	display: inline-block;
 	border: 1px solid var(--amber);
 	padding: 0 1px;
@@ -56,10 +56,9 @@ input:focus {
 	border-color: var(--amber);
 }
 
-.entry {
+.center {
 	display: flex;
 	justify-content: center;
-	margin: 20px;
 }
 
 a {
