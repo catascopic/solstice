@@ -15,7 +15,7 @@ NAME_PATTERN = re.compile('/([A-Z]{3})')
 
 async def connect(socket, path):
 	match = NAME_PATTERN.fullmatch(path)
-	if match == None:
+	if not match:
 		await socket.close(4000, 'invalid')
 		return
 
@@ -72,7 +72,7 @@ def video_call_info():
 def choose_fair(chooser):
 	active_clients = [client for client in online_clients() if client != chooser]
 	total = len(active_clients)
-	if total == 0:
+	if not total:
 		return None
 	# should we update if there's only 1 choice?
 	best = active_clients[0]
@@ -139,7 +139,7 @@ class Client:
 		chat = message.get('chat')
 		if chat:
 			to_broadcast = {'name': self.name, 'content': chat}
-			if message.get('newline') or self.active_chat is None:
+			if message.get('newline') or not self.active_chat:
 				self.active_chat = new_chat(self.name)
 				to_broadcast['newline'] = True
 			self.active_chat.content = chat
