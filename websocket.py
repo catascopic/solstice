@@ -59,7 +59,7 @@ def chat_history():
 
 
 async def victory():
-	info = video_call_info();
+	info = video_call_info()
 	for client in clients.values():
 		await client.safe_send({'victory': info})
 
@@ -164,9 +164,9 @@ class Client:
 
 
 	async def safe_send(self, message):
+		# TODO: is this all necessary?
 		if self.online():
 			try:
-				# remove Nones?
 				await self.socket.send(json.dumps(message))
 				return True
 			except ConnectionClosedError:
@@ -197,7 +197,13 @@ class Client:
 				# ideally combine this with the "teamwork" message, but whatever
 				await self.broadcast({'goal': goals_left})
 		else:
-			await self.safe_send({'feedback': False})
+			response = {'feedback': False}
+			for client of client.values():
+				if given_response == client.response:
+					response['contactHelp'] = client.name
+					break;
+
+			await self.safe_send(response)
 
 
 	def next_prompt(self):
