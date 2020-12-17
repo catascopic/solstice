@@ -34,10 +34,10 @@ async def connect(socket, path):
 		print(f'{name} connected, {len(clients)} total')
 
 	await check_unpaired()
-	await client.handle()
+	await client.handle_connection()
 	print(f'{name} disconnected')
-	
-	
+
+
 def online_clients():
 	return (client for client in clients.values() if client.online())
 
@@ -56,8 +56,8 @@ async def check_unpaired():
 
 def chat_history():
 	return [chat.__dict__ for chat in messages if chat.content]
-	
-	
+
+
 async def victory():
 	info = video_call_info();
 	for client in clients.values():
@@ -98,7 +98,7 @@ class Client:
 	def __init__(self, socket, name):
 		self.name = name
 		self.socket = socket
-		self.chat = None
+		self.active_chat = None
 		with open(f'codebooks/{len(clients)}.json') as file:
 			self.codebook = json.load(file)
 		self.prompts_left = self.codebook.copy()
@@ -106,73 +106,59 @@ class Client:
 
 		self.contact = None
 		self.cleanup_task = None
-		
+
 		self.chances = 0
 		self.chosen = 0
 		self.rate = 0
-		
+
 		self.next_prompt()
 
 
-	async def handle(self):
+	async def handle_connection(self):
 		if self.cleanup_task:
-			result = self.cleanup_task.cancel()
+			self.cleanup_task.cancel()
 
-		if goals_left > 0:
-			await self.send_state()
-		else:
-			await self.send_victory_state()
+		await self.send_state()
 
 		try:
 			async for message in self.socket:
-				print(f'{self.name}: {message}')
-				data = json.loads(message)
-				response = data.get('response')
-				if response:
-					await self.check_response(response)
-					continue
-
-				# TODO: naming!
-				content = data.get('chat')
-				if content:
-					to_broadcast = {
-						'name': self.name,
-						'content': content
-					}
-					if data.get('newline') or self.chat is None:
-						self.chat = new_chat(self.name)
-						to_broadcast['newline'] = True
-					self.chat.content = content
-					await self.broadcast({'chat': to_broadcast})
+				await handle_message(json.loads(message))
 		except ConnectionClosedError:
 			# this is raised if the socket closes without an error code
 			# in this case, I don't think we should care
 			pass
 		self.cleanup_task = asyncio.get_event_loop().create_task(self.cleanup())
-		
+
+
+	async def handle_message(self, message):
+		response = message.get('response')
+		if response:
+			await self.check_response(response)
+			return
+
+		chat = message.get('chat')
+		if chat:
+			to_broadcast = {'name': self.name, 'content': chat}
+			if message.get('newline') or self.active_chat is None:
+				self.active_chat = new_chat(self.name)
+				to_broadcast['newline'] = True
+			self.active_chat.content = chat
+			await self.broadcast({'chat': to_broadcast})
+
 
 	async def send_state(self):
-		if self.chat is None:
-			myChat = ''
+		state = {'codebook': self.codebook, 'backlog': chat_history()}
+		if goals_left > 0:
+			state['goal'] = goals_left,
+			state['prompt'] = self.prompt,
 		else:
-			myChat = self.chat.content
-	
-		await self.safe_send({
-			'codebook': self.codebook,
-			'goal': goals_left,
-			'prompt': self.prompt,
-			'backlog': chat_history(),
-			'myChat': myChat
-		})
+			state['victory'] = video_call_info()
+
+		if self.active_chat:
+			state['myChat'] = self.active_chat.content
+		await self.safe_send(state)
 
 
-	async def send_victory_state(self):
-		await self.safe_send({
-			'victory': video_call_info(),
-			'backlog': chat_history()
-		})
-		
-	
 	def online(self):
 		return not self.socket.closed
 
@@ -200,7 +186,7 @@ class Client:
 			await self.contact.safe_send({'teamwork': self.name})
 			self.next_prompt()
 			goals_left -= 1
-			
+
 			if goals_left <= 0:
 				await victory()
 			else:
@@ -212,7 +198,7 @@ class Client:
 				await self.broadcast({'goal': goals_left})
 		else:
 			await self.safe_send({'feedback': False})
-		
+
 
 	def next_prompt(self):
 		self.contact = choose_fair(self)
@@ -221,8 +207,8 @@ class Client:
 			self.response = None
 		else:
 			self.prompt, self.response = self.contact.prompts_left.pop()
-			
-	
+
+
 	async def send_next_prompt(self):
 		self.next_prompt()
 		# send null prompt if no users are online?
@@ -249,8 +235,8 @@ class Client:
 			return -1
 		expected = self.rate * self.chances
 		return (self.chosen - expected) / expected
-		
-			
+
+
 	def __repr__(self):
 		return f'{self.name}, {"on" if self.online() else "off"}line'
 
