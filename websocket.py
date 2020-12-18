@@ -122,7 +122,7 @@ class Client:
 
 		try:
 			async for message in self.socket:
-				await handle_message(json.loads(message))
+				await self.handle_message(json.loads(message))
 		except ConnectionClosedError:
 			# this is raised if the socket closes without an error code
 			# in this case, I don't think we should care
@@ -198,8 +198,8 @@ class Client:
 				await self.broadcast({'goal': goals_left})
 		else:
 			response = {'feedback': False}
-			for client of client.values():
-				if given_response == client.response:
+			for client in clients.values():
+				if client.contact == self and given_response == client.response:
 					response['contactHelp'] = client.name
 					break;
 
