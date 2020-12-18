@@ -149,11 +149,11 @@ class Client:
 	async def send_state(self):
 		state = {'codebook': self.codebook, 'backlog': chat_history()}
 		if goals_left > 0:
-			state['goal'] = goals_left,
-			state['prompt'] = self.prompt,
+			state['goal'] = goals_left
 		else:
 			state['victory'] = video_call_info()
-
+		if self.prompt:
+			state['prompt'] = self.prompt
 		if self.active_chat:
 			state['myChat'] = self.active_chat.content
 		await self.safe_send(state)
