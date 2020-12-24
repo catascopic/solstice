@@ -1,0 +1,36 @@
+html {
+}
+
+body {
+	font-family: sans-serif;
+}
+
+.chart-title {
+	font-size: 18px;
+	padding: 9px;
+}
+
+.morse {
+	font-size: 18px;
+	display: inline-grid;	
+	grid-auto-flow: row;
+	grid-template-columns: 30px 144px 144px 30px;
+}
+
+.morse > span:nth-child(4n + 1), .morse > span:nth-child(4n) {
+	text-align: center;
+}
+
+.morse > span:nth-child(4n + 2) {
+	justify-content: left;
+}
+
+.morse > span:nth-child(4n + 3) {
+	justify-content: right;
+}
+
+.morse > span:nth-child(4n + 2), .morse > span:nth-child(4n + 3) {
+	display: inline-flex;
+	align-items: center;
+	gap: 9px;
+}
